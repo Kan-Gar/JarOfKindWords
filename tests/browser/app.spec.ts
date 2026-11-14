@@ -62,18 +62,21 @@ test('wand animation opens a real note and the large title is absent',async({pag
  await draw(page);await expect(page.locator('#modal')).toHaveAttribute('data-delivery','wand');
  await expect(page.locator('.note-number')).toContainText('палочки');
 });
-test('temporary preview displays both long letters, auto saves and does not unlock the ending',async({page})=>{
- await page.emulateMedia({reducedMotion:'reduce'});await enter(page);await page.setViewportSize({width:320,height:480});
- for(const name of ['Первое письмо','Второе письмо']){
-  await page.locator('#test-final').click();await page.getByRole('button',{name,exact:true}).click();
-  await expect(page.locator('.final-letter')).toBeVisible();await expect(page.locator('#save-note')).toHaveAttribute('aria-pressed','true');
+test('release has no test shortcut and final letters remain readable and saved',async({page})=>{
+ const ids=notes.filter(n=>n.rarity!=='final').map(n=>n.id);
+ await page.addInitScript(ids=>{if(!localStorage.getItem('kind-words-jar.v1'))localStorage.setItem('kind-words-jar.v1',JSON.stringify({version:1,soundDefaultsVersion:2,introSeen:true,soundEnabled:false,readNotes:ids,favorites:[]}));},ids);
+ await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:320,height:480});await page.goto('/');
+ await expect(page.getByRole('button',{name:/Тест/})).toHaveCount(0);
+ await expect(page.locator('#test-final')).toHaveCount(0);
+ await draw(page);
+ for(const id of ['final_001','final_002']){
+  await expect(page.locator('.note-text')).toHaveText(notes.find(n=>n.id===id)!.text);
+  await expect(page.locator('#save-note')).toHaveAttribute('aria-pressed','true');
   const box=await page.locator('.note-actions').boundingBox();expect(box!.y+box!.height).toBeLessThanOrEqual(480);
   await page.locator('.note-text').evaluate(el=>el.scrollTop=el.scrollHeight);
-  await page.screenshot({path:'test-results/final-letter-'+(name==='Первое письмо'?'1':'2')+'.png'});
-  await page.getByRole('button',{name:'Закрыть записку'}).click();
+  if(id==='final_001')await page.getByRole('button',{name:'Ещё записку'}).click();
  }
- const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('kind-words-jar.v1')!));
- expect(saved.readNotes).toEqual([]);expect(saved.favorites).toEqual(['final_001','final_002']);
+ await page.getByRole('button',{name:'Закрыть записку'}).click();
  await page.reload();await page.locator('#favorites').click();await expect(page.locator('.favorite-card')).toHaveCount(2);
 });
 test('natural ending follows the last ordinary note and automatically saves both letters',async({page})=>{
