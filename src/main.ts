@@ -16,6 +16,7 @@ async function boot() {
   catch {ui.stage.innerHTML='<div class="fallback-jar" aria-hidden="true"><span>✧</span><i></i><i></i><i></i><i></i><i></i></div>';ui.toast('Упрощённая графика: все записки и избранное доступны.');}
   const controller=new JarController(ui,new NoteManager(notes,storage),audio,animation);
   ui.on('jar',()=>void controller.draw());ui.on('draw',()=>void controller.draw());
+  ui.on('test-final',()=>ui.finalPreview(notes,n=>controller.previewFinal(n)));
   ui.on('favorites',()=>controller.favorites());
   ui.on('moods',()=>ui.moods(mood=>{storage.state.selectedMood=mood;storage.save();ui.refresh();ui.dialog.close();}));
   const settings=()=>ui.settings(()=>{storage.state.soundEnabled=!storage.state.soundEnabled;audio.enabled=storage.state.soundEnabled;storage.save();void audio.unlock().then(()=>audio.play('favorite'));settings();document.querySelector<HTMLButtonElement>('#sound')?.focus();},()=>{ui.dialog.close();ui.showIntro();});

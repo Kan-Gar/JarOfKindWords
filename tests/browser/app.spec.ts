@@ -1,3 +1,4 @@
+import notes from '../../src/data/notes.json' with { type: 'json' };
 import { test, expect, type Page } from '@playwright/test';
 const errors:string[]=[];
 async function enter(page:Page){await page.goto('/');await page.getByRole('button',{name:'Открыть подарок',exact:true}).click();await expect(page.locator('#intro')).toBeHidden();}
@@ -53,4 +54,35 @@ test('snowy owl brings a letter and leaves, including repeated deliveries',async
   await page.screenshot({path:'test-results/owl-letter.png'});
   await page.getByRole('button',{name:'Ещё записку'}).click();await expect(page.locator('.note-text')).toBeVisible();
   await expect(page.locator('#modal')).toHaveAttribute('data-delivery','owl');
+});
+
+test('wand animation opens a real note and the large title is absent',async({page})=>{
+ await page.addInitScript(()=>{Math.random=()=>0.3;});await enter(page);
+ await expect(page.getByRole('heading',{name:'Баночка хороших слов'})).toHaveCount(0);
+ await draw(page);await expect(page.locator('#modal')).toHaveAttribute('data-delivery','wand');
+ await expect(page.locator('.note-number')).toContainText('палочки');
+});
+test('temporary preview displays both long letters, auto saves and does not unlock the ending',async({page})=>{
+ await page.emulateMedia({reducedMotion:'reduce'});await enter(page);await page.setViewportSize({width:320,height:480});
+ for(const name of ['Первое письмо','Второе письмо']){
+  await page.locator('#test-final').click();await page.getByRole('button',{name,exact:true}).click();
+  await expect(page.locator('.final-letter')).toBeVisible();await expect(page.locator('#save-note')).toHaveAttribute('aria-pressed','true');
+  const box=await page.locator('.note-actions').boundingBox();expect(box!.y+box!.height).toBeLessThanOrEqual(480);
+  await page.locator('.note-text').evaluate(el=>el.scrollTop=el.scrollHeight);
+  await page.screenshot({path:'test-results/final-letter-'+(name==='Первое письмо'?'1':'2')+'.png'});
+  await page.getByRole('button',{name:'Закрыть записку'}).click();
+ }
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('kind-words-jar.v1')!));
+ expect(saved.readNotes).toEqual([]);expect(saved.favorites).toEqual(['final_001','final_002']);
+ await page.reload();await page.locator('#favorites').click();await expect(page.locator('.favorite-card')).toHaveCount(2);
+});
+test('natural ending follows the last ordinary note and automatically saves both letters',async({page})=>{
+ const ids=notes.filter(n=>n.rarity!=='final'&&n.id!=='support_001').map(n=>n.id);
+ await page.addInitScript(ids=>localStorage.setItem('kind-words-jar.v1',JSON.stringify({version:1,soundDefaultsVersion:2,introSeen:true,soundEnabled:false,readNotes:ids,favorites:[],remainingNotes:{random:['support_001']}})),ids);
+ await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/');await draw(page);
+ await expect(page.locator('.final-letter')).toHaveCount(0);
+ for(const id of ['final_001','final_002']){
+  await page.getByRole('button',{name:'Ещё записку'}).click();await expect(page.locator('.note-text')).toHaveText(notes.find(n=>n.id===id)!.text);
+  await expect(page.locator('#save-note')).toHaveAttribute('aria-pressed','true');
+ }
 });

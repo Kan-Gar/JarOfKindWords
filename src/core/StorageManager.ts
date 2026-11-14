@@ -17,9 +17,9 @@ export class StorageManager {
         selectedMood: moods.includes(raw.selectedMood) ? raw.selectedMood : 'random', favorites: validIds(raw.favorites), readNotes: validIds(raw.readNotes), lastNoteId: ids.has(raw.lastNoteId) ? raw.lastNoteId : null };
       for (const mood of moods as Mood[]) {
         if (Array.isArray(raw.remainingNotes?.[mood])) {
-          this.state.remainingNotes[mood] = validIds(raw.remainingNotes[mood]).filter(id => mood === 'random' || notes.find(n => n.id === id)?.category === mood);
+          this.state.remainingNotes[mood] = validIds(raw.remainingNotes[mood]).filter(id => notes.find(n => n.id === id)?.rarity !== 'final' && (mood === 'random' || notes.find(n => n.id === id)?.category === mood));
           // A content update adds new notes without restoring already consumed ones.
-          const newIds = notes.filter(n => (mood === 'random' || n.category === mood) && !this.state.readNotes.includes(n.id) && !this.state.remainingNotes[mood]!.includes(n.id)).map(n => n.id);
+          const newIds = notes.filter(n => n.rarity !== 'final' && (mood === 'random' || n.category === mood) && !this.state.readNotes.includes(n.id) && !this.state.remainingNotes[mood]!.includes(n.id)).map(n => n.id);
           this.state.remainingNotes[mood]!.push(...newIds);
         }
       }

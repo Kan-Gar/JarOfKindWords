@@ -1,9 +1,13 @@
 import { Application, Container, Graphics } from 'pixi.js';
+import { StoryBackdrop } from '../components/StoryBackdrop';
 import { OwlCourier } from '../components/OwlCourier';
 import { ParticleSystem } from '../systems/ParticleSystem';
 export class SceneManager {
   readonly app = new Application();
   readonly world = new Container();
+  private backdrop = new StoryBackdrop();
+  readonly wand = new Container();
+  readonly spell = new Graphics();
   readonly owl = new OwlCourier();
   readonly jar = new Container();
   readonly lid = new Container();
@@ -17,15 +21,17 @@ export class SceneManager {
   private reduced = matchMedia('(prefers-reduced-motion: reduce)');
   setIdle(value: boolean) { this.idle = value; if (!value) { this.jar.rotation = 0; this.jar.y = 215; } }
   async init(host: HTMLElement) {
-    await this.app.init({ width: 520, height: 440, backgroundAlpha: 0, antialias: false, resolution: Math.min(devicePixelRatio || 1, 2), autoDensity: true, preference: 'webgl' });
+    await this.app.init({ width: 520, height: 600, backgroundAlpha: 0, antialias: false, resolution: Math.min(devicePixelRatio || 1, 2), autoDensity: true, preference: 'webgl' });
     host.appendChild(this.app.canvas);
     this.app.canvas.setAttribute('aria-hidden', 'true');
-    this.app.stage.addChild(this.world);
+    this.app.stage.addChild(this.backdrop.view,this.world);
+    this.world.y=160;
     this.build();
     this.app.ticker.maxFPS = 60;
     this.app.ticker.add(ticker => {
       if (this.reduced.matches) return;
       this.elapsed += ticker.deltaMS / 1000;
+      this.backdrop.update(this.elapsed);
       this.sheen.x = -55 + ((this.elapsed * 14) % 110);
       this.sheen.alpha = Math.max(0, Math.sin(this.elapsed * 0.5)) * 0.12;
       this.particles.update(ticker.deltaMS / 1000);
@@ -41,27 +47,6 @@ export class SceneManager {
   }
   private build() {
     const rect = (parent: Container, x: number, y: number, w: number, h: number, color: number, alpha = 1) => { const g = new Graphics().rect(x,y,w,h).fill({color,alpha}); parent.addChild(g); return g; };
-    // All art is authored here on a compact pixel grid; no external images or filters.
-    for (let i=0;i<45;i++) {
-      const x=(i*79+21)%510, y=(i*43+17)%280;
-      rect(this.world,x,y,2,2,0xb5addb,0.25+(i%3)*0.12);
-      if(i%8===0){rect(this.world,x-3,y+1,8,1,0xf7d58b,0.5);rect(this.world,x+1,y-3,1,8,0xf7d58b,0.5);}
-    }
-    // A distant wizarding castle behind a tall, leaded study window.
-    const castle = new Graphics();
-    for (const [x,y,w,h] of [[92,151,38,72],[133,170,42,53],[176,145,45,78],[334,154,38,69],[375,133,28,90]]) {
-      castle.rect(x,y,w,h).fill(0x302d45).poly([x-4,y,x+w/2,y-29,x+w+4,y]).fill(0x43405a);
-      for(let j=0;j<3;j++)castle.rect(x+8+(j%2)*14,y+15+Math.floor(j/2)*17,4,7).fill({color:0xdcb876,alpha:0.65});
-    }
-    this.world.addChild(castle);
-    const arch = new Graphics().moveTo(55,224).lineTo(55,80).quadraticCurveTo(55,15,256,3).quadraticCurveTo(458,15,458,80).lineTo(458,224).stroke({color:0x8e775a,width:5,alpha:0.65});
-    this.world.addChild(arch);
-    // Moon and distant window.
-    const moon = new Graphics().circle(417,58,23).fill(0xe4d7b4).circle(425,51,22).fill(0x24213d);
-    this.world.addChild(moon);
-    rect(this.world,55,26,4,198,0x514564,0.5);rect(this.world,458,26,4,198,0x514564,0.5);
-    rect(this.world,55,224,407,5,0x514564,0.45);
-    rect(this.world,256,0,5,111,0x514564,0.3);
     const shadow = new Graphics().ellipse(260,379,154,18).fill({color:0x090a19,alpha:0.55}); this.world.addChild(shadow);
     rect(this.world,37,354,446,12,0x70513c);rect(this.world,32,366,456,10,0x3d2d29);rect(this.world,48,376,424,12,0x302329);
     for(let i=0;i<12;i++)rect(this.world,48+i*36,358+(i%2)*4,22,2,0xb18080,0.3);
@@ -101,6 +86,12 @@ export class SceneManager {
     this.world.addChild(this.particles.view);
     this.world.addChild(this.flying);this.flying.visible=false;
     this.world.addChild(this.owl.view);
+    this.wand.addChild(new Graphics().poly([-5,50,5,50,2,-48,-2,-48]).fill(0x826041).rect(-6,26,12,26).fill(0x392a2b).rect(-5,27,10,3).fill(0xc9a66b));
+    const tip=new Graphics();for(let i=0;i<5;i++)tip.circle(0,-48,13-i*2).fill({color:0xffe6aa,alpha:0.08});
+    this.wand.addChild(tip);this.wand.visible=false;
+    this.spell.moveTo(395,160).bezierCurveTo(360,90,205,120,260,220).stroke({color:0xf7d58b,width:2,alpha:0.8});
+    for(let i=0;i<10;i++)this.spell.rect(240+(i*17)%140,112+(i*13)%95,3,3).fill(0xffeac1);
+    this.spell.visible=false;this.world.addChild(this.spell,this.wand);
   }
   makeFlying(color: string) {
     this.flying.removeChildren().forEach(c=>c.destroy());

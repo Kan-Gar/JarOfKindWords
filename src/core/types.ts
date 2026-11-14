@@ -7,5 +7,5 @@ export const categories = {
 } as const;
 export type Category = keyof typeof categories;
 export type Mood = 'random' | Category;
-export interface Note { id: string; category: Category; text: string; rarity: 'common' | 'rare' | 'special' | 'confession'; weight: number }
+export interface Note { id: string; category: Category; text: string; rarity: 'common' | 'rare' | 'special' | 'confession' | 'final'; unlockOrder?: number; weight: number }
 export interface SavedState { version: 1; soundDefaultsVersion: 2; introSeen: boolean; favorites: string[]; readNotes: string[]; soundEnabled: boolean; selectedMood: Mood; remainingNotes: Partial<Record<Mood, string[]>>; lastNoteId: string | null; }

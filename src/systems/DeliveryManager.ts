@@ -1,10 +1,12 @@
-/** Independent from note rarity: an owl can bring an ordinary letter too. */
+export type Delivery = 'jar' | 'owl' | 'wand';
+/** Delivery is independent from note rarity. A courier arrives at least every seventh draw. */
 export class DeliveryManager {
-  private jarDeliveries = 0;
+  private sinceOwl = 0;
   constructor(private random = Math.random) {}
-  next(): boolean {
-    const owl = this.jarDeliveries >= 6 || this.random() < 0.18;
-    this.jarDeliveries = owl ? 0 : this.jarDeliveries + 1;
-    return owl;
+  next(): Delivery {
+    const roll=this.random();
+    if (this.sinceOwl>=6 || roll<0.18) {this.sinceOwl=0;return 'owl';}
+    this.sinceOwl++;
+    return roll<0.48 ? 'wand' : 'jar';
   }
 }

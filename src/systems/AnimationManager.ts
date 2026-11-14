@@ -1,14 +1,16 @@
+import type { Delivery } from './DeliveryManager';
 import { gsap } from 'gsap';
 import { SceneManager } from '../core/SceneManager';
 import { AudioManager } from './AudioManager';
 export class AnimationManager {
   private reduced = matchMedia('(prefers-reduced-motion: reduce)');
   constructor(private scene: SceneManager, private audio: AudioManager) { document.addEventListener('visibilitychange',()=>gsap.globalTimeline.paused(document.hidden)); }
-  async extract(color: string, quick: boolean, special = false, owlDelivery = false) {
+  async extract(color: string, quick: boolean, special = false, delivery: Delivery = 'jar') {
     const s = this.scene;
     s.setIdle(false); s.particles.burst(); this.audio.play('glass');
     if(this.reduced.matches) { await new Promise(r=>setTimeout(r,100)); s.setIdle(true); return; }
-    if (owlDelivery) { await this.deliverByOwl(color, quick); s.setIdle(true); this.audio.play('magic'); return; }
+    if (delivery === 'wand') { await this.deliverByWand(color, quick); s.setIdle(true); this.audio.play('magic'); return; }
+    if (delivery === 'owl') { await this.deliverByOwl(color, quick); s.setIdle(true); this.audio.play('magic'); return; }
     s.makeFlying(color);
     s.flying.visible=false;
     await new Promise<void>(resolve=> {
@@ -28,6 +30,28 @@ export class AnimationManager {
         .to(s.jar,{rotation:0,duration:0.15},1.4);
     });
     s.flying.visible=false;s.setIdle(true);this.audio.play('magic');
+  }
+  private async deliverByWand(color: string, quick: boolean) {
+    const s=this.scene;
+    s.makeFlying(color);s.flying.visible=false;
+    s.wand.visible=true;s.wand.alpha=1;s.wand.position.set(440,270);s.wand.rotation=0.8;
+    s.spell.visible=true;s.spell.alpha=0;
+    await new Promise<void>(resolve=>{
+      const tl=gsap.timeline({onComplete:resolve});tl.timeScale(quick?1.4:1);
+      tl.to(s.wand,{x:370,y:200,rotation:-0.5,duration:0.5,ease:'power2.out'})
+        .to(s.wand,{rotation:0.2,duration:0.3,ease:'power2.inOut'})
+        .to(s.spell,{alpha:1,duration:0.25},0.5)
+        .call(()=>{s.flying.visible=true;s.particles.burst();this.audio.play('magic');},[],0.8)
+        .to(s.lid,{y:-120,rotation:-0.12,duration:0.3},0.7)
+        .to(s.flying.position,{x:260,y:90,duration:0.65,ease:'power2.inOut'},0.8)
+        .to(s.flying.scale,{x:2.4,y:2.4,duration:0.65},0.8)
+        .to(s.flying,{rotation:0.15,duration:0.65},0.8)
+        .to(s.spell,{alpha:0,duration:0.4},1)
+        .to(s.lid,{y:-87,rotation:0,duration:0.3},1.25)
+        .to(s.wand,{x:510,y:320,alpha:0,duration:0.4},1.25)
+        .to(s.flying,{alpha:0,duration:0.2},1.5);
+    });
+    s.wand.visible=false;s.spell.visible=false;s.flying.visible=false;
   }
   private async deliverByOwl(color: string, quick: boolean) {
     const s = this.scene, owl = s.owl;

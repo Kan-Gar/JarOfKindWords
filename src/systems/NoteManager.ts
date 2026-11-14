@@ -6,19 +6,30 @@ export class NoteManager {
   }
   next(mood: Mood): Note {
     const state = this.storage.state;
-    let remaining = state.remainingNotes[mood];
-    if (!remaining?.length) remaining = this.notes.filter(n => mood === 'random' || n.category === mood).map(n => n.id);
+    const regular = this.notes.filter(n => n.rarity !== 'final');
+    // Final letters are a global epilogue: category selection and old queues cannot bypass it.
+    if (regular.every(n => state.readNotes.includes(n.id))) {
+      const finale = this.notes.filter(n => n.rarity === 'final').sort((a,b)=>(a.unlockOrder ?? 0)-(b.unlockOrder ?? 0)).find(n=>!state.readNotes.includes(n.id));
+      if (finale) { this.remember(finale); return finale; }
+    }
+    const allowed = regular.filter(n => mood === 'random' || n.category === mood);
+    let remaining = state.remainingNotes[mood]?.filter(id=>allowed.some(n=>n.id===id));
+    if (!remaining?.length) remaining = allowed.map(n=>n.id);
     if (!remaining.length) throw new Error('В этой категории пока нет записок');
-    // Weighted sampling without replacement: even the rarest note is guaranteed in a full cycle.
-    const candidates = remaining.map(id => this.notes.find(n => n.id === id)!).filter(Boolean);
+    const candidates = remaining.map(id => allowed.find(n => n.id === id)!);
     const pool = candidates.length > 1 ? candidates.filter(n => n.id !== state.lastNoteId) : candidates;
-    const weight = (n: Note) => Math.max(0.001, n.weight * this.rarityWeights[n.rarity]);
+    const weight = (n: Note) => Math.max(0.001, n.weight * this.rarityWeights[n.rarity as keyof typeof this.rarityWeights]);
     let cursor = this.random() * pool.reduce((sum, n) => sum + weight(n), 0);
     const note = pool.find(n => (cursor -= weight(n)) < 0) || pool[pool.length - 1];
     state.remainingNotes[mood] = remaining.filter(id => id !== note.id);
-    if (!state.readNotes.includes(note.id)) state.readNotes.push(note.id);
-    state.lastNoteId = note.id;
-    this.storage.save();
+    this.remember(note);
     return note;
+  }
+  private remember(note: Note) {
+    const state=this.storage.state;
+    if (!state.readNotes.includes(note.id)) state.readNotes.push(note.id);
+    if (note.rarity==='final' && !state.favorites.includes(note.id)) state.favorites.push(note.id);
+    state.lastNoteId=note.id;
+    this.storage.save();
   }
 }

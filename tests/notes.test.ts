@@ -6,24 +6,25 @@ import { StorageManager, STORAGE_KEY } from '../src/core/StorageManager';
 import { NoteManager } from '../src/systems/NoteManager';
 const notes=data as Note[];
 function memory(initial: unknown=null) {let value=initial===null?null:JSON.stringify(initial);return {getItem:()=>value,setItem:(_key:string,v:string)=>{value=v;}};}
-test('106 valid unique notes, five categories and six very rare confessions',()=>{
-  assert.equal(notes.length,106);assert.equal(new Set(notes.map(n=>n.id)).size,106);
-  for(const category of Object.keys(categories))assert.equal(notes.filter(n=>n.category===category).length,category==='special'?26:20);
-  for(const n of notes){assert.ok(n.text.length>30);assert.ok(n.weight>0);assert.ok(['common','rare','special','confession'].includes(n.rarity));}
+test('158 unique notes including 50 additions and two locked final letters',()=>{
+  assert.equal(notes.length,158);assert.equal(new Set(notes.map(n=>n.id)).size,158);
+  for(const category of Object.keys(categories))assert.equal(notes.filter(n=>n.category===category).length,category==='special'?38:30);
+  for(const n of notes){assert.ok(n.text.length>30);assert.ok(n.weight>0);assert.ok(['common','rare','special','confession','final'].includes(n.rarity));}
 });
-test('complete weighted cycles include rare notes, no repeats, no repeat at boundary',()=>{
-  const s=new StorageManager(notes,memory()),manager=new NoteManager(notes,s);
-  let previous='';
-  for(let cycle=0;cycle<4;cycle++){
-    const ids=new Set<string>();
-    for(let i=0;i<notes.length;i++){const n=manager.next('random');assert.notEqual(n.id,previous);assert.ok(!ids.has(n.id));ids.add(n.id);previous=n.id;}
-    assert.equal(ids.size,106);
-  }
+test('first cycle ends with two finals; later ordinary cycles remain without repeats',()=>{
+ const s=new StorageManager(notes,memory()),manager=new NoteManager(notes,s);
+ const first=Array.from({length:158},()=>manager.next('random'));
+ assert.equal(new Set(first.map(n=>n.id)).size,158);
+ assert.deepEqual(first.slice(-2).map(n=>n.id),['final_001','final_002']);
+ for(let cycle=0;cycle<3;cycle++){
+  const ids=Array.from({length:156},()=>manager.next('random').id);
+  assert.equal(new Set(ids).size,156);assert.ok(!ids.some(id=>id.startsWith('final_')));
+ }
 });
 test('category cycles reset independently and random progress is retained',()=>{
   const s=new StorageManager(notes,memory()),manager=new NoteManager(notes,s);
   manager.next('random');manager.next('humor');const random=[...s.state.remainingNotes.random!],humor=[...s.state.remainingNotes.humor!];
-  for(let cycle=0;cycle<2;cycle++){const ids=new Set(Array.from({length:20},()=>manager.next('support').id));assert.equal(ids.size,20);}
+  for(let cycle=0;cycle<2;cycle++){const ids=new Set(Array.from({length:30},()=>manager.next('support').id));assert.equal(ids.size,30);}
   assert.deepEqual(s.state.remainingNotes.random,random);assert.deepEqual(s.state.remainingNotes.humor,humor);
 });
 test('reload retains cycle, favorites, sound, mood and history',()=>{
@@ -46,7 +47,7 @@ test('content additions are available while removed IDs are discarded',()=>{
   assert.ok(restored.state.remainingNotes.random!.includes(notes[10].id));assert.ok(!restored.state.remainingNotes.random!.includes(notes[0].id));
 });
 test('favorite toggle removes only the chosen ID',()=>{const s=new StorageManager(notes,memory());s.toggleFavorite(notes[0].id);s.toggleFavorite(notes[1].id);s.toggleFavorite(notes[0].id);assert.deepEqual(s.state.favorites,[notes[1].id]);});
-test('zero random value and extremely small rarity weights still terminate cycles',()=>{const s=new StorageManager(notes,memory()),m=new NoteManager(notes,s,()=>0,{common:1,rare:0.000001,special:0.000001,confession:0.000001});assert.equal(new Set(Array.from({length:notes.length},()=>m.next('random').id)).size,106);});
+test('zero random value and extremely small rarity weights still terminate cycles',()=>{const s=new StorageManager(notes,memory()),m=new NoteManager(notes,s,()=>0,{common:1,rare:0.000001,special:0.000001,confession:0.000001});assert.equal(new Set(Array.from({length:notes.length},()=>m.next('random').id)).size,158);});
 
 test('retired motivation is removed from an existing save without losing favorites',()=>{
  const s=new StorageManager(notes,memory({version:1,selectedMood:'motivation',soundEnabled:false,favorites:['motivation_001','humor_001'],readNotes:['motivation_001','support_001'],remainingNotes:{random:['motivation_001','humor_001']}}));
@@ -64,5 +65,21 @@ test('personalized messages and very rare confessions are present',()=>{
  assert.equal(notes.find(n=>n.id==='humor_013')!.text,'Баночка сообщает: сегодня ты большая умничка. Апелляции принимаются, но отклоняются.');
  assert.equal(notes.filter(n=>n.rarity==='confession').length,6);
  assert.ok(!notes.some(n=>(n.category as string)==='motivation'));
- const s=new StorageManager(notes,memory());assert.equal(new NoteManager(notes,s,()=>0.9999999).next('random').rarity,'confession');
+ const s=new StorageManager(notes,memory());s.state.remainingNotes.random=notes.filter(n=>n.rarity==='confession').map(n=>n.id);assert.equal(new NoteManager(notes,s,()=>0.9999999).next('random').rarity,'confession');
+});
+
+test('finals cannot be drawn through a category or tampered queue before all other notes',()=>{
+ const s=new StorageManager(notes,memory()),m=new NoteManager(notes,s,()=>0.99999);
+ s.state.remainingNotes.special=['final_001','final_002'];
+ for(let i=0;i<80;i++)assert.notEqual(m.next('special').rarity,'final');
+ assert.ok(!s.state.favorites.includes('final_001'));
+});
+test('global epilogue unlocks in order across moods, survives reload and saves favorites',()=>{
+ const mem=memory(),s=new StorageManager(notes,mem);
+ s.state.readNotes=notes.filter(n=>n.rarity!=='final').map(n=>n.id);
+ const m=new NoteManager(notes,s);
+ assert.equal(m.next('humor').id,'final_001');assert.ok(s.state.favorites.includes('final_001'));
+ const restored=new StorageManager(notes,mem);
+ assert.equal(new NoteManager(notes,restored).next('support').id,'final_002');
+ assert.deepEqual(restored.state.favorites,['final_001','final_002']);
 });

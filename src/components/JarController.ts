@@ -14,10 +14,10 @@ export class JarController {
     this.locked=true;this.ui.busy(true);
     try {
       const note=this.notes.next(this.notes.storage.state.selectedMood);
-      const owlDelivery=this.deliveries.next();
-      this.ui.dialog.dataset.delivery=owlDelivery?'owl':'jar';
+      const delivery=this.deliveries.next();
+      this.ui.dialog.dataset.delivery=delivery;
       await this.audio.unlock();
-      if(this.animation)await this.animation.extract(categories[note.category].color,this.opened,note.rarity!=='common',owlDelivery);
+      if(this.animation)await this.animation.extract(categories[note.category].color,this.opened,note.rarity!=='common',delivery);
       this.opened=true;this.show(note);this.ui.refresh();
       if(!this.notes.storage.available)this.ui.toast('Хранилище недоступно: записки сохраняются только на время сеанса.');
     } catch { this.ui.toast('Не получилось достать записку. Попробуй ещё раз.'); }
@@ -35,6 +35,12 @@ export class JarController {
     this.locked=true;
     await this.animation?.close(this.ui.dialog.querySelector('.note-card')!);
     this.ui.dialog.close();this.locked=false;await this.draw();
+  }
+  previewFinal(note: Note) {
+    if(this.locked)return;
+    // Preview saves the gift, but deliberately does not mark it read or advance the epilogue.
+    if(!this.notes.storage.state.favorites.includes(note.id))this.notes.storage.toggleFavorite(note.id);
+    this.ui.dialog.dataset.delivery='preview';this.show(note,true);this.ui.refresh();
   }
   favorites() {this.ui.dialog.dataset.delivery='archive';this.ui.favorites(this.notes.notes,n=>this.show(n,true));}
 }
