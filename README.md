@@ -135,3 +135,11 @@ GitHub Pages хранит готовые файлы сайта и отдаёт �
 Избранное и прогресс находятся в браузере получателя, а не на GitHub. Они сохраняются в том же браузере, пока его данные доступны, и могут не совпадать между Safari и Telegram. При очистке хранилища прогресс исчезнет.
 
 Официальные условия: https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages и https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits.
+
+## Ошибка `Get Pages site failed / HttpError: Not Found`
+
+Если ошибка возникает в `actions/configure-pages`, сначала откройте Settings → Pages → Build and deployment → Source и выберите **GitHub Actions**. Это однократное включение Pages; запуск workflow сам по себе не создаёт сайт. Для бесплатного аккаунта репозиторий должен быть публичным. Затем запустите **новый** запуск Publish GitHub Pages → Run workflow → main: повтор старого запуска использует старую версию workflow.
+
+Не включайте `enablement: true` в надежде решить это штатным `GITHUB_TOKEN`: автоматическое создание сайта требует другого токена с дополнительными правами. Для обычной публикации после настройки Pages дополнительных секретов не нужно.
+
+Workflow использует опубликованные версии Actions на Node.js 24 и образ Ubuntu 24.04. Предупреждения о старом runtime Node.js 20 и миграции ubuntu-latest не являются причиной ошибки отсутствующего Pages-сайта. Доступность сайта проверяется после успешного выполнения jobs build и deploy.
