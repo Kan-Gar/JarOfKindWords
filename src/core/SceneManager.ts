@@ -1,8 +1,10 @@
 import { Application, Container, Graphics } from 'pixi.js';
+import { OwlCourier } from '../components/OwlCourier';
 import { ParticleSystem } from '../systems/ParticleSystem';
 export class SceneManager {
   readonly app = new Application();
   readonly world = new Container();
+  readonly owl = new OwlCourier();
   readonly jar = new Container();
   readonly lid = new Container();
   readonly slips = new Container();
@@ -45,6 +47,15 @@ export class SceneManager {
       rect(this.world,x,y,2,2,0xb5addb,0.25+(i%3)*0.12);
       if(i%8===0){rect(this.world,x-3,y+1,8,1,0xf7d58b,0.5);rect(this.world,x+1,y-3,1,8,0xf7d58b,0.5);}
     }
+    // A distant wizarding castle behind a tall, leaded study window.
+    const castle = new Graphics();
+    for (const [x,y,w,h] of [[92,151,38,72],[133,170,42,53],[176,145,45,78],[334,154,38,69],[375,133,28,90]]) {
+      castle.rect(x,y,w,h).fill(0x302d45).poly([x-4,y,x+w/2,y-29,x+w+4,y]).fill(0x43405a);
+      for(let j=0;j<3;j++)castle.rect(x+8+(j%2)*14,y+15+Math.floor(j/2)*17,4,7).fill({color:0xdcb876,alpha:0.65});
+    }
+    this.world.addChild(castle);
+    const arch = new Graphics().moveTo(55,224).lineTo(55,80).quadraticCurveTo(55,15,256,3).quadraticCurveTo(458,15,458,80).lineTo(458,224).stroke({color:0x8e775a,width:5,alpha:0.65});
+    this.world.addChild(arch);
     // Moon and distant window.
     const moon = new Graphics().circle(417,58,23).fill(0xe4d7b4).circle(425,51,22).fill(0x24213d);
     this.world.addChild(moon);
@@ -52,7 +63,7 @@ export class SceneManager {
     rect(this.world,55,224,407,5,0x514564,0.45);
     rect(this.world,256,0,5,111,0x514564,0.3);
     const shadow = new Graphics().ellipse(260,379,154,18).fill({color:0x090a19,alpha:0.55}); this.world.addChild(shadow);
-    rect(this.world,37,354,446,12,0x715369);rect(this.world,32,366,456,10,0x3e3046);rect(this.world,48,376,424,12,0x2b2539);
+    rect(this.world,37,354,446,12,0x70513c);rect(this.world,32,366,456,10,0x3d2d29);rect(this.world,48,376,424,12,0x302329);
     for(let i=0;i<12;i++)rect(this.world,48+i*36,358+(i%2)*4,22,2,0xb18080,0.3);
     // Books and a little candle.
     rect(this.world,64,336,80,15,0x6e669d);rect(this.world,69,338,70,8,0xc8b4aa);rect(this.world,61,349,88,6,0x9c7c99);
@@ -71,7 +82,7 @@ export class SceneManager {
     this.jar.addChild(back);
     for(let i=0;i<9;i++) { const g = new Graphics().ellipse(0,40,75-i*6,72-i*5).fill({color:0xc4a6dd,alpha:0.018}); this.jar.addChild(g); }
     this.jar.addChild(this.slips);
-    const colors=[0xc7b7e3,0xf1b7c7,0xe3cd99,0xa6cbd9,0xb9c99f];
+    const colors=[0xe5cea5,0xd9bd8b,0xf1dfb4,0xc8b7a0,0xe3c9a4];
     for(let i=0;i<29;i++){
       const slip=new Graphics().rect(-16,-9,32,18).fill(colors[i%5]).stroke({color:0x4c405c,width:2,alpha:0.4}).moveTo(-15,-7).lineTo(0,3).lineTo(15,-7).stroke({color:0xfff0d7,width:1,alpha:0.5});
       slip.position.set(((i*37)%125)-62,25+((i*23)%86));slip.rotation=Math.sin(i*9)*0.7;this.slips.addChild(slip);
@@ -89,10 +100,11 @@ export class SceneManager {
     for(let i=0;i<9;i++)rect(this.lid,-62+i*15,-6,3,9,0xd2a3a1,0.5);
     this.world.addChild(this.particles.view);
     this.world.addChild(this.flying);this.flying.visible=false;
+    this.world.addChild(this.owl.view);
   }
   makeFlying(color: string) {
     this.flying.removeChildren().forEach(c=>c.destroy());
-    this.flying.addChild(new Graphics().rect(-23,-14,46,28).fill(color).stroke({color:0xfff0d7,width:2}).moveTo(-22,-12).lineTo(0,3).lineTo(22,-12).stroke({color:0x82718d,width:1}));
+    this.flying.addChild(new Graphics().rect(-23,-14,46,28).fill(color).stroke({color:0xfff0d7,width:2}).moveTo(-22,-12).lineTo(0,3).lineTo(22,-12).stroke({color:0x82718d,width:1}).circle(0,4,4).fill(0x923d46));
     this.flying.visible=true;this.flying.position.set(260,225);this.flying.scale.set(0.6);this.flying.alpha=1;this.flying.rotation=-0.2;
   }
 }

@@ -1,3 +1,4 @@
+import { DeliveryManager } from '../systems/DeliveryManager';
 import { AnimationManager } from '../systems/AnimationManager';
 import { NoteManager } from '../systems/NoteManager';
 import { AudioManager } from '../systems/AudioManager';
@@ -6,14 +7,17 @@ import { categories, type Note } from '../core/types';
 export class JarController {
   private locked=false;
   private opened=false;
+  private deliveries = new DeliveryManager();
   constructor(private ui: UIManager,private notes: NoteManager,private audio: AudioManager,private animation?: AnimationManager) {}
   async draw() {
     if(this.locked)return;
     this.locked=true;this.ui.busy(true);
     try {
       const note=this.notes.next(this.notes.storage.state.selectedMood);
+      const owlDelivery=this.deliveries.next();
+      this.ui.dialog.dataset.delivery=owlDelivery?'owl':'jar';
       await this.audio.unlock();
-      if(this.animation)await this.animation.extract(categories[note.category].color,this.opened,note.rarity!=='common');
+      if(this.animation)await this.animation.extract(categories[note.category].color,this.opened,note.rarity!=='common',owlDelivery);
       this.opened=true;this.show(note);this.ui.refresh();
       if(!this.notes.storage.available)this.ui.toast('Хранилище недоступно: записки сохраняются только на время сеанса.');
     } catch { this.ui.toast('Не получилось достать записку. Попробуй ещё раз.'); }
@@ -32,5 +36,5 @@ export class JarController {
     await this.animation?.close(this.ui.dialog.querySelector('.note-card')!);
     this.ui.dialog.close();this.locked=false;await this.draw();
   }
-  favorites() {this.ui.favorites(this.notes.notes,n=>this.show(n,true));}
+  favorites() {this.ui.dialog.dataset.delivery='archive';this.ui.favorites(this.notes.notes,n=>this.show(n,true));}
 }

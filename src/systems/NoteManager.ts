@@ -1,7 +1,7 @@
 import type { Mood, Note } from '../core/types';
 import { StorageManager } from '../core/StorageManager';
 export class NoteManager {
-  constructor(readonly notes: Note[], readonly storage: StorageManager, private random = Math.random, private rarityWeights = { common: 1, rare: 0.35, special: 0.12 }) {
+  constructor(readonly notes: Note[], readonly storage: StorageManager, private random = Math.random, private rarityWeights = { common: 1, rare: 0.35, special: 0.12, confession: 0.006 }) {
     if (!notes.length || new Set(notes.map(n => n.id)).size !== notes.length) throw new Error('Набор записок пуст или содержит повторяющиеся ID');
   }
   next(mood: Mood): Note {

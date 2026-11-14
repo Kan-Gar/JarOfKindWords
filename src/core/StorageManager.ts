@@ -4,7 +4,7 @@ export class StorageManager {
   state: SavedState;
   available = true;
   constructor(notes: Note[], private storage: Pick<Storage, 'getItem' | 'setItem'> | null = (() => { try { return localStorage; } catch { return null; } })()) {
-    const defaults: SavedState = { version: 1, introSeen: false, favorites: [], readNotes: [], soundEnabled: false, selectedMood: 'random', remainingNotes: {}, lastNoteId: null };
+    const defaults: SavedState = { version: 1, soundDefaultsVersion: 2, introSeen: false, favorites: [], readNotes: [], soundEnabled: true, selectedMood: 'random', remainingNotes: {}, lastNoteId: null };
     this.state = defaults;
     const ids = new Set(notes.map(n => n.id));
     const validIds = (a: unknown): string[] => Array.isArray(a) ? [...new Set(a.filter((id): id is string => typeof id === 'string' && ids.has(id)))] : [];
@@ -13,7 +13,7 @@ export class StorageManager {
       const raw = JSON.parse(storage.getItem(STORAGE_KEY) || 'null');
       if (!raw || raw.version !== 1) return;
       const moods = ['random', ...Object.keys(categories)];
-      this.state = { ...defaults, introSeen: raw.introSeen === true, soundEnabled: raw.soundEnabled === true,
+      this.state = { ...defaults, introSeen: raw.introSeen === true, soundEnabled: raw.soundDefaultsVersion === 2 ? raw.soundEnabled !== false : true,
         selectedMood: moods.includes(raw.selectedMood) ? raw.selectedMood : 'random', favorites: validIds(raw.favorites), readNotes: validIds(raw.readNotes), lastNoteId: ids.has(raw.lastNoteId) ? raw.lastNoteId : null };
       for (const mood of moods as Mood[]) {
         if (Array.isArray(raw.remainingNotes?.[mood])) {

@@ -20,7 +20,7 @@ async function boot() {
   ui.on('moods',()=>ui.moods(mood=>{storage.state.selectedMood=mood;storage.save();ui.refresh();ui.dialog.close();}));
   const settings=()=>ui.settings(()=>{storage.state.soundEnabled=!storage.state.soundEnabled;audio.enabled=storage.state.soundEnabled;storage.save();void audio.unlock().then(()=>audio.play('favorite'));settings();document.querySelector<HTMLButtonElement>('#sound')?.focus();},()=>{ui.dialog.close();ui.showIntro();});
   ui.on('settings',settings);
-  ui.on('open-gift',()=>{storage.state.introSeen=true;storage.save();ui.hideIntro();});
+  ui.on('open-gift',()=>{void audio.unlock().then(()=>audio.play('magic'));storage.state.introSeen=true;storage.save();ui.hideIntro();});
   if(!storage.state.introSeen)ui.showIntro();
   document.querySelector('footer')!.lastChild!.textContent=` / ${notes.length} записок`;
 }

@@ -4,10 +4,11 @@ import { AudioManager } from './AudioManager';
 export class AnimationManager {
   private reduced = matchMedia('(prefers-reduced-motion: reduce)');
   constructor(private scene: SceneManager, private audio: AudioManager) { document.addEventListener('visibilitychange',()=>gsap.globalTimeline.paused(document.hidden)); }
-  async extract(color: string, quick: boolean, special = false) {
+  async extract(color: string, quick: boolean, special = false, owlDelivery = false) {
     const s = this.scene;
     s.setIdle(false); s.particles.burst(); this.audio.play('glass');
     if(this.reduced.matches) { await new Promise(r=>setTimeout(r,100)); s.setIdle(true); return; }
+    if (owlDelivery) { await this.deliverByOwl(color, quick); s.setIdle(true); this.audio.play('magic'); return; }
     s.makeFlying(color);
     s.flying.visible=false;
     await new Promise<void>(resolve=> {
@@ -27,6 +28,26 @@ export class AnimationManager {
         .to(s.jar,{rotation:0,duration:0.15},1.4);
     });
     s.flying.visible=false;s.setIdle(true);this.audio.play('magic');
+  }
+  private async deliverByOwl(color: string, quick: boolean) {
+    const s = this.scene, owl = s.owl;
+    owl.reset();s.makeFlying(color);s.flying.visible=false;
+    await new Promise<void>(resolve=>{
+      const tl=gsap.timeline({onComplete:resolve});
+      tl.timeScale(quick ? 1.35 : 1);
+      tl.to(owl.view,{x:260,y:70,duration:0.95,ease:'power2.out',onUpdate:()=>{
+        owl.leftWing.rotation=Math.sin(tl.time()*19)*0.55;
+        owl.rightWing.rotation=-owl.leftWing.rotation;
+      }}).to(owl.view,{y:78,duration:0.22,yoyo:true,repeat:1})
+        .call(()=>{owl.letter.visible=false;s.flying.visible=true;s.flying.position.set(260,125);s.flying.scale.set(0.9);this.audio.play('paper');})
+        .to(s.flying.position,{y:145,duration:0.45,ease:'power2.out'},1.39)
+        .to(s.flying.scale,{x:2.4,y:2.4,duration:0.45},1.39)
+        .to(owl.view,{x:610,y:-30,duration:0.75,ease:'power2.in',onUpdate:()=>{
+          owl.leftWing.rotation=Math.sin(tl.time()*19)*0.55;owl.rightWing.rotation=-owl.leftWing.rotation;
+        }},1.44)
+        .to(s.flying,{alpha:0,duration:0.2},1.85);
+    });
+    owl.view.visible=false;s.flying.visible=false;s.particles.burst();
   }
   reveal(element: HTMLElement) {
     gsap.fromTo(element,{opacity:0,y:this.reduced.matches?0:24,rotateX:this.reduced.matches?0:-35,scale:this.reduced.matches?1:0.85},{opacity:1,y:0,rotateX:0,scale:1,duration:this.reduced.matches?0.15:0.55,ease:'back.out(1.2)',clearProps:'transform'});

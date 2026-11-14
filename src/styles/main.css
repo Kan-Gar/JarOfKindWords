@@ -7,3 +7,15 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .ui-icon{width:18px;height:18px;display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.icon-button .ui-icon{width:22px;height:22px}
+/* A quiet Hogwarts study: aged parchment, oxblood wax and antique brass. */
+:root{--pink:#dfc49a;--gold:#e4bd70;--muted:#beb39f}
+body{background:radial-gradient(ellipse at 50% 48%,#65513a35,transparent 58%),linear-gradient(145deg,#202332,#111522 70%)}
+h1 em,h2 em{color:#e5c995}.eyebrow{color:#c0a97e}.wordmark{color:#d1bd96}.tiny-star{color:#dfb863}
+.subtitle span{color:#d6ad76}.scene-caption{color:#bdab8c}.draw-button{background:#d6bd8e;border-color:#f0d9a9;color:#352a25;box-shadow:0 4px 0 #73573755,0 0 30px #e5ba6512}.draw-button:hover{background:#ead2a5}
+.panel-dialog{background:#252530;border-color:#b0945a66}.panel h2{color:#ecd9b7}.mood-option[aria-pressed=true]{border-color:#d3b37088;background:#bf9e5815}.mood-symbol,.bottom-nav button>span:first-child{color:#d2b67d}.switch.on{background:#d5bb88}
+.intro{background:radial-gradient(ellipse at 50% 45%,#423a35,#111522 70%)}
+.note-card{background:radial-gradient(ellipse at 20% 0%,#fff0cc99,transparent 60%),repeating-linear-gradient(0deg,#9b783504 0px,#9b783504 1px,transparent 1px,transparent 4px),linear-gradient(135deg,#efddb4,#ddc394);border-color:#c4a36c;color:#443528;box-shadow:inset 0 0 60px #7f542c25}
+.note-card:before{border-color:#97744255}.note-category,.paper-icon{color:#725435}.note-signature{color:#826448}.note-number{color:#80674b}.note-actions{border-color:#95734844}.next-note{background:#65363c;color:#fff0d7}.save-note{color:#6c473d;background:#79502e10}
+.wax-seal{align-self:center;display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin:10px 0 16px;border-radius:43% 49% 45% 48%;border:3px double #c07762;background:#893d41;box-shadow:2px 3px 0 #4e2d3033,inset 0 0 0 3px #622d3655;text-shadow:0 1px #4b2228;color:#e9bd87;font-size:25px;font-style:italic}
+.confession{box-shadow:inset 0 0 65px #a765542a,0 0 34px #e3bb6c26}.confession .wax-seal{background:#772f46;color:#f5d3b0}.favorite-card{background:#efddb4}.favorite-category{color:#785936}
+@media(max-height:570px){.wax-seal{display:none}}

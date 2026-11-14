@@ -12,14 +12,14 @@ export class UIManager {
     document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <main class="gift">
         <header class="topbar"><a class="wordmark" href="./" aria-label="Баночка хороших слов, главная"><span class="tiny-star">✦</span> МАЛЕНЬКОЕ ВОЛШЕБСТВО</a><button class="icon-button" id="settings" aria-label="Настройки">${gear}</button></header>
-        <section class="heading"><p class="eyebrow">БЕРЕЖНО СОБРАНО ДЛЯ ТЕБЯ</p><h1>Баночка<br><em>хороших слов</em></h1><p class="subtitle">Для тебя, на любой случай <span>♡</span></p></section>
+        <section class="heading"><p class="eyebrow">СОВИНАЯ ПОЧТА · ТОЛЬКО ДЛЯ ТЕБЯ</p><h1>Баночка<br><em>хороших слов</em></h1><p class="subtitle">Для тебя, на любой случай <span>♡</span></p></section>
         <section class="scene-section" aria-label="Волшебная баночка">
           <div class="scene-halo"></div><div id="scene"></div><button id="jar" class="jar-hit" aria-label="Достать записку из баночки"></button>
-          <span class="scene-caption">немного тепла внутри</span>
+          <span class="scene-caption">письма из твоего маленького Хогвартса</span>
         </section>
         <section class="invitation"><button id="draw" class="draw-button"><span>Достать записку</span><span aria-hidden="true">${arrow}</span></button><p id="hint" aria-live="polite">Нажми на баночку — она кое-что для тебя хранит</p></section>
         <nav class="bottom-nav" aria-label="Разделы"><button id="favorites"><span aria-hidden="true">♡</span> Избранное <small id="favorite-count">0</small></button><span class="nav-divider"></span><button id="moods"><span aria-hidden="true">✧</span><span id="mood-label">Выбрать настроение</span></button></nav>
-        <footer>Пусть сегодня станет чуточку теплее <span>·</span> <span id="read-count">0</span> / 120 записок</footer>
+        <footer>Пусть сегодня станет чуточку теплее <span>·</span> <span id="read-count">0</span> записок</footer>
       </main>
       <section id="intro" class="intro" aria-label="Твой подарок" hidden><div class="intro-stars" aria-hidden="true">✧ &nbsp; ✦ &nbsp; ✧</div><p class="eyebrow">КОЕ-ЧТО ЛИЧНОЕ</p><h2>Я приготовил для тебя<br><em>кое-что маленькое…</em></h2><p class="intro-copy">Здесь спрятаны слова, которые, надеюсь,<br>иногда будут делать твой день чуточку лучше.</p><button class="draw-button" id="open-gift">Открыть подарок <span aria-hidden="true">${arrow}</span></button><p class="intro-foot">Можно заглядывать, когда захочется</p></section>
       <dialog id="modal" aria-label="Записки и настройки"><div id="dialog-content"></div></dialog><p id="toast" class="toast" role="status" hidden></p>`;
@@ -54,7 +54,7 @@ export class UIManager {
   }
   note(note: Note, next: () => void, favorite: () => void, fromFavorites=false) {
     const category=categories[note.category],saved=this.storage.state.favorites.includes(note.id);
-    this.modal(`<article class="note-card ${note.rarity!=='common'?'rare':''}" style="--note-color:${category.color}"><div class="note-top"><span class="note-category">${category.symbol} &nbsp;${category.label}</span><button class="paper-icon" data-close aria-label="Закрыть записку">×</button></div><div class="note-ornament" aria-hidden="true">${category.symbol}</div><p class="note-text" tabindex="0"></p><p class="note-signature">с теплом, для тебя</p><div class="note-actions"><button id="save-note" class="save-note" aria-pressed="${saved}"><span aria-hidden="true">${saved?'♥':'♡'}</span> ${saved?'В избранном':'В избранное'}</button><button id="next-note" class="next-note">${fromFavorites?'К избранному':'Ещё записку'} <span aria-hidden="true">${arrow}</span></button></div><p class="note-number">Бумажное напоминание № ${note.id.split('_')[1]}</p></article>`, 'Записка: '+category.label,true);
+    this.modal(`<article class="note-card ${note.rarity==='confession'?'rare confession':note.rarity!=='common'?'rare':''}" style="--note-color:${category.color}"><div class="note-top"><span class="note-category">${category.symbol} &nbsp;${category.label}</span><button class="paper-icon" data-close aria-label="Закрыть записку">×</button></div><div class="note-ornament wax-seal" aria-hidden="true">${note.rarity==='confession'?'♡':'H'}</div><p class="note-text" tabindex="0"></p><p class="note-signature">твой человек по эту сторону волшебства</p><div class="note-actions"><button id="save-note" class="save-note" aria-pressed="${saved}"><span aria-hidden="true">${saved?'♥':'♡'}</span> ${saved?'В избранном':'В избранное'}</button><button id="next-note" class="next-note">${fromFavorites?'К избранному':'Ещё записку'} <span aria-hidden="true">${arrow}</span></button></div><p class="note-number">${this.dialog.dataset.delivery==='owl'?'Письмо принесла белая сова':'Из личной совиной почты'} · № ${note.id.split('_')[1]}</p></article>`, 'Записка: '+category.label,true);
     this.dialog.querySelector('.note-text')!.textContent=note.text;
     this.on('next-note',next);this.on('save-note',favorite);
   }
@@ -72,7 +72,7 @@ export class UIManager {
   }
   moods(select: (mood: Mood) => void) {
     this.modal(`<section class="panel"><div class="panel-heading"><div><p class="eyebrow">ПРИСЛУШАЙСЯ К СЕБЕ</p><h2>Как ты сейчас?</h2></div><button class="icon-button" data-close aria-label="Закрыть выбор настроения">×</button></div><p class="panel-subtitle">Баночка подберёт нужные слова.</p><div class="mood-list"></div></section>`,'Выбор настроения');
-    const moods: Mood[]=['random','support','humor','compliment','motivation','warmth','special'];
+    const moods: Mood[]=['random','support','humor','compliment','warmth','special'];
     moods.forEach(mood=>{
       const b=document.createElement('button');b.className='mood-option';b.setAttribute('aria-pressed',String(this.storage.state.selectedMood===mood));
       b.innerHTML=`<span class="mood-symbol">${mood==='random'?'✦':categories[mood].symbol}</span><span>${mood==='random'?'Удиви меня':categories[mood].mood}</span><span class="check">${mood===this.storage.state.selectedMood?'✓':arrow}</span>`;
